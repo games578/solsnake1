@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Snake SOL</title>
+<style>
+  :root { --bg:#0b0b10; --panel:#14141c; --panel2:#1a1a24; --line:#262634; --ink:#f1f1f6; --mute:#7d7d92; --accent:#b08cff; --accent-ink:#1a0f33; --green:#2de2a0; --them:#ff7a59; --food:#f5d547; --me:#b08cff; }
+  * { box-sizing:border-box; }
+  body { margin:0; min-height:100vh; background:var(--bg); color:var(--ink); font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif; position:relative; overflow-x:hidden; }
+  body::before, body::after { content:""; position:fixed; border-radius:50%; filter:blur(40px); z-index:0; pointer-events:none; }
+  body::before { width:200px; height:200px; left:9%; top:26%; background:#8b5cf6; opacity:.55; }
+  body::after { width:180px; height:180px; right:5%; top:40%; background:#8a8a1c; opacity:.45; }
+  header { position:relative; z-index:1; display:flex; align-items:center; gap:28px; padding:14px 28px; border-bottom:1px solid var(--line); }
+  .brand { display:flex; align-items:center; gap:10px; font-weight:800; letter-spacing:2px; font-size:18px; }
+  nav { display:flex; gap:22px; flex:1; }
+  nav a { color:var(--ink); text-decoration:none; font-weight:600; font-size:14px; padding:4px 0; }
+  nav a.on { color:var(--accent); }
+  .right { display:flex; gap:10px; align-items:center; }
+  .chip { background:var(--panel); border:1px solid var(--line); border-radius:999px; padding:6px 14px; font-size:13px; font-weight:600; }
+  .chip.green { color:var(--green); }
+  button { font:inherit; color:var(--ink); background:var(--panel2); border:1px solid var(--line); border-radius:8px; padding:10px 16px; cursor:pointer; font-weight:600; }
+  button:hover:not(:disabled) { border-color:var(--accent); }
+  button:focus-visible, summary:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+  button:disabled { cursor:default; color:var(--mute); }
+  .btn-accent { background:var(--accent); color:var(--accent-ink); border-color:var(--accent); border-radius:999px; }
+  main { position:relative; z-index:1; }
+  #home { display:grid; grid-template-columns:340px 420px 250px; gap:20px; justify-content:center; padding:56px 20px 90px; align-items:start; }
+  .col { display:flex; flex-direction:column; gap:20px; }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+  .pad { padding:20px; }
+  .label { color:var(--mute); font-size:12px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; }
+  .hero { padding:26px 20px; text-align:center; background:radial-gradient(circle at 50% 40%, rgba(176,140,255,.22), transparent 62%); }
+  .hero h2 { margin:6px 0 2px; font-size:34px; letter-spacing:1px; }
+  .hero p { margin:0; color:var(--mute); }
+  .hero .row { display:flex; justify-content:space-between; align-items:flex-end; margin-top:26px; text-align:left; font-size:13px; font-weight:600; }
+  .fee { border:1px solid rgba(45,226,160,.4); background:rgba(45,226,160,.08); border-radius:8px; padding:8px 14px; }
+  .fee b { display:block; color:var(--green); font-size:16px; }
+  .dotg { display:inline-block; width:8px; height:8px; background:var(--green); border-radius:50%; margin-right:6px; }
+  .how { padding:16px 20px; border-top:1px solid var(--line); color:var(--mute); font-size:13px; }
+  .how b { color:var(--ink); }
+  .stakes { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:14px 0; }
+  .stakes button.on { border-color:var(--accent); color:var(--accent); background:rgba(176,140,255,.1); }
+  #play { width:100%; padding:14px; font-size:15px; background:var(--panel2); }
+  #play.ready { background:var(--accent); color:var(--accent-ink); border-color:var(--accent); }
+  .free { display:flex; align-items:center; gap:8px; margin:10px 0 0; font-weight:600; cursor:pointer; }
+  .free small { color:var(--mute); font-weight:400; }
+  .free input { accent-color:var(--accent); width:16px; height:16px; }
+  #status { min-height:22px; margin-top:12px; color:var(--mute); font-size:13px; text-align:center; }
+  #leave { width:100%; margin-top:10px; }
+  details { margin-top:14px; color:var(--mute); font-size:13px; }
+  summary { cursor:pointer; text-align:center; font-weight:700; letter-spacing:1px; font-size:12px; list-style:none; }
+  details p { margin:10px 0 0; }
+  .skins { display:flex; gap:12px; margin-top:14px; }
+  .skins button { width:36px; height:36px; padding:0; border-radius:50%; border:2px solid transparent; }
+  .skins button.on { border-color:var(--ink); }
+  .preview { height:90px; margin-top:14px; background:var(--bg); border-radius:8px; display:flex; align-items:center; justify-content:center; }
+  .tabs { display:flex; gap:6px; padding:12px; }
+  .tabs span { flex:1; text-align:center; padding:8px; border-radius:8px; font-weight:700; font-size:13px; }
+  .tabs .on { background:var(--panel2); border:1px solid var(--line); }
+  .rows { padding:4px 16px 12px; min-height:150px; }
+  .rows .empty { text-align:center; color:var(--mute); font-size:13px; padding:30px 8px; }
+  .rows .empty b { display:block; color:var(--ink); margin-bottom:4px; }
+  .lb { display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--line); font-size:13px; }
+  .lb span:last-child { color:var(--green); font-weight:700; }
+  .earn { border-top:1px solid var(--line); text-align:center; padding:14px; }
+  .earn b { display:block; color:var(--green); font-size:22px; }
+  /* game */
+  #game { display:flex; flex-direction:column; align-items:center; gap:14px; padding:30px 16px 60px; }
+  .hud { display:flex; gap:14px; align-items:center; font-weight:700; flex-wrap:wrap; justify-content:center; }
+  .hud .chip i { display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:8px; }
+  canvas { background:var(--panel); border:1px solid var(--line); border-radius:12px; width:min(560px,92vw); height:auto; touch-action:none; }
+  .bar { width:min(560px,92vw); height:4px; background:var(--panel2); border-radius:2px; overflow:hidden; }
+  .bar div { height:100%; background:var(--accent); width:0; }
+  #gstatus { color:var(--mute); min-height:22px; }
+  #result { text-align:center; }
+  #result h3 { font-size:28px; margin:0 0 6px; }
+  #foot { position:fixed; left:0; right:0; bottom:0; z-index:1; border-top:1px solid var(--line); background:rgba(11,11,16,.9); padding:8px 20px; font-size:12px; color:var(--mute); display:flex; justify-content:center; gap:20px; }
+  @media (max-width:1100px) { #home { grid-template-columns:minmax(0,420px); } header { gap:12px; padding:12px; flex-wrap:wrap; } nav { display:none; } .right { margin-left:auto; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <svg width="30" height="30" viewBox="0 0 30 30" fill="none" stroke="#b08cff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 22h14a6 6 0 0 0 0-12H11"/><circle cx="8" cy="10" r="1.5" fill="#b08cff" stroke="none"/></svg>
+    SNAKE SOL
+  </div>
+  <nav><a class="on" href="#">Play</a><a href="#details">How it works</a></nav>
+  <div class="right">
+    <span class="chip" id="net">devnet</span>
+    <span class="chip green" id="demoBal" hidden></span>
+    <span class="chip green" id="bal" hidden></span>
+    <button id="connect" class="btn-accent">Connect wallet</button>
+  </div>
+</header>
+
+<main id="home">
+  <div class="col">
+    <section class="card">
+      <div class="hero">
+        <div class="label">Gamemode</div>
+        <h2>SNAKE 1V1</h2>
+        <p>Winner takes the pot</p>
+        <div class="row">
+          <span><span class="dotg"></span>Playing: <span id="online">0</span></span>
+          <span class="fee"><span class="label">Entry fee</span><b>From 0.01 SOL</b></span>
+        </div>
+      </div>
+      <div class="how"><b>Last snake alive wins.</b> Crash into a wall, yourself or your opponent and you lose. Time runs out? The longer snake wins.</div>
+    </section>
+  </div>
+
+  <div class="col">
+    <section class="card pad">
+      <div class="label">Entry stake</div>
+      <label class="free"><input type="checkbox" id="free"> Free play <small>fake dollars, no wallet needed</small></label>
+      <div class="stakes" id="stakes"></div>
+      <button id="play" disabled>Connect wallet to play</button>
+      <button id="leave" hidden>Cancel and refund</button>
+      <div id="status"></div>
+      <details id="details">
+        <summary>GAME DETAILS</summary>
+        <p id="detailText"></p>
+      </details>
+    </section>
+    <section class="card pad">
+      <div style="display:flex;justify-content:space-between;align-items:center"><b>Customize appearance</b><span class="chip" id="skinName">Lavender</span></div>
+      <div class="preview"><svg width="150" height="40" viewBox="0 0 150 40" aria-hidden="true"><g id="prevSnake"></g></svg></div>
+      <div class="skins" id="skins"></div>
+    </section>
+  </div>
+
+  <div class="col">
+    <section class="card">
+      <div class="tabs"><span class="on">Leaderboard</span><span><i class="dotg"></i>Live</span></div>
+      <div class="rows" id="rows"><div class="empty"><b>No champions yet</b>Win a match and your wallet shows up here.</div></div>
+      <div class="earn"><span class="label">Global payouts</span><b id="paid">0 SOL</b></div>
+    </section>
+  </div>
+</main>
+
+<main id="game" hidden>
+  <div class="hud">
+    <span class="chip"><i id="meDot"></i>You <span id="meLen">3</span></span>
+    <span class="chip green" id="prizeChip">Prize</span>
+    <span class="chip"><i style="background:var(--them)"></i>Opponent <span id="themLen">3</span></span>
+  </div>
+  <canvas id="c" width="600" height="600"></canvas>
+  <div class="bar"><div id="timer"></div></div>
+  <div id="gstatus"></div>
+  <div id="result" class="card pad" hidden></div>
+</main>
+
+<div id="foot"><span>Steer with arrow keys, WASD or swipe</span><span id="rake"></span></div>
+
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.98.0/lib/index.iife.min.js"></script>
+<script>
+const $ = (id) => document.getElementById(id);
+const cvs = $('c'), ctx = cvs.getContext('2d');
+const SKINS = [['Lavender', '#b08cff'], ['Mint', '#2de2a0'], ['Sky', '#4cc2ff'], ['Gold', '#f5d547'], ['Pink', '#ff6fb5']];
+let demo = false, demoBal = 2, held = 0;
+try { const v = localStorage.getItem('snakesol_demo'); if (v !== null && !isNaN(+v)) demoBal = +v; } catch {}
+let ws, cfg, provider, wallet, stake = null, you = -1, grid = 30, state = null, playing = false, queued = false, busy = false, skin = SKINS[0];
+
+const setStatus = (t) => { $('status').textContent = t; };
+const apiBase = () => (window.SERVER_URL ? window.SERVER_URL.replace(/^ws/, 'http') : '');
+const short = (w) => w.slice(0, 4) + '...' + w.slice(-4);
+
+// ---------- lobby ----------
+const fmt = (v) => (demo ? '$' + v.toFixed(2) : v + ' SOL');
+function saveDemo() { demoBal = Math.round(demoBal * 100) / 100; try { localStorage.setItem('snakesol_demo', demoBal); } catch {} updateChips(); }
+function updateChips() {
+  $('demoBal').hidden = !demo; $('demoBal').textContent = 'Demo $' + demoBal.toFixed(2);
+  if (!wallet || demo) $('bal').hidden = true;
+}
+function updatePlay() {
+  const b = $('play');
+  b.classList.remove('ready');
+  if (demo) {
+    if (busy || queued) b.disabled = true;
+    else if (cfg && demoBal < cfg.demoStakes[0]) { b.textContent = 'Out of demo cash. Reset to $2.00'; b.disabled = false; }
+    else if (stake === null) { b.textContent = 'Select entry stake'; b.disabled = true; }
+    else { b.textContent = `Play for ${fmt(stake)} (free play)`; b.disabled = false; b.classList.add('ready'); }
+    return;
+  }
+  if (!wallet) { b.textContent = 'Connect wallet to play'; b.disabled = false; }
+  else if (busy || queued) { b.disabled = true; }
+  else if (stake === null) { b.textContent = 'Select entry stake'; b.disabled = true; }
+  else { b.textContent = `Stake ${stake} SOL and play`; b.disabled = false; b.classList.add('ready'); }
+}
+function renderDetails() {
+  const r = cfg.rakeBps / 100;
+  if (demo) { $('detailText').textContent = `Free play uses fake dollars. You start with $2.00 and nothing touches your wallet. If no other player is waiting, a practice bot joins after a few seconds. Winning pays the pot minus the ${r}% fee, just like the real thing, but free play isn't on the leaderboard.`; return; }
+  $('detailText').textContent = `Both players stake the same amount. The winner gets the pot minus a ${r}% house fee. Example: two ${stake || 0.1} SOL stakes make a ${((stake || 0.1) * 2).toFixed(2)} SOL pot and the winner receives ${((stake || 0.1) * 2 * (1 - r / 100)).toFixed(4)} SOL. Draws and cancelled queues are refunded in full.`;
+  $('rake').textContent = `${r}% fee per match`;
+}
+function buildStakes() {
+  $('stakes').innerHTML = '';
+  (demo ? cfg.demoStakes : cfg.stakes).forEach((s) => {
+    const b = document.createElement('button');
+    b.textContent = fmt(s);
+    if (s === stake) b.classList.add('on');
+    if (demo && s > demoBal) b.disabled = true;
+    b.onclick = () => { if (busy || queued) return; stake = s; [...$('stakes').children].forEach((x) => x.classList.remove('on')); b.classList.add('on'); renderDetails(); updatePlay(); };
+    $('stakes').appendChild(b);
+  });
+}
+function buildSkins() {
+  SKINS.forEach((s, i) => {
+    const b = document.createElement('button');
+    b.style.background = s[1]; b.setAttribute('aria-label', s[0]); b.title = s[0];
+    b.onclick = () => { skin = s; document.documentElement.style.setProperty('--me', s[1]); [...$('skins').children].forEach((x) => x.classList.remove('on')); b.classList.add('on'); paintPreview(); };
+    if (i === 0) b.classList.add('on');
+    $('skins').appendChild(b);
+  });
+  paintPreview();
+}
+function paintPreview() {
+  $('skinName').textContent = skin[0];
+  let h = '';
+  for (let i = 0; i < 6; i++) h += `<rect x="${10 + i * 22}" y="8" width="20" height="24" rx="5" fill="${skin[1]}" opacity="${i === 5 ? 1 : .85}"/>`;
+  $('prevSnake').innerHTML = h;
+}
+async function loadBoard() {
+  try {
+    const d = await (await fetch(apiBase() + '/api/leaderboard')).json();
+    $('paid').textContent = d.totalPaidSol.toFixed(2) + ' SOL';
+    if (d.top.length) $('rows').innerHTML = d.top.map((r) => `<div class="lb"><span>${short(r.wallet)} <small style="color:var(--mute)">${r.wins}W</small></span><span>${r.wonSol.toFixed(3)} SOL</span></div>`).join('');
+  } catch {}
+}
+async function loadBalance() {
+  if (!wallet || !cfg) return;
+  try {
+    const conn = new solanaWeb3.Connection(cfg.rpc, 'confirmed');
+    const l = await conn.getBalance(new solanaWeb3.PublicKey(wallet));
+    $('bal').hidden = demo; $('bal').textContent = (l / 1e9).toFixed(3) + ' SOL';
+  } catch {}
+}
+
+// ---------- socket ----------
+function connectWS() {
+  ws = new WebSocket(window.SERVER_URL || ((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host));
+  ws.onmessage = (e) => handle(JSON.parse(e.data));
+  ws.onclose = () => { setStatus('Disconnected from the game server. Refresh to reconnect.'); $('gstatus').textContent = 'Disconnected. Refresh to reconnect.'; };
+}
+function show(game) { $('home').hidden = game; $('game').hidden = !game; }
+
+function handle(m) {
+  if (m.type === 'config') { cfg = m; $('net').textContent = m.cluster; buildStakes(); renderDetails(); updatePlay(); loadBalance(); }
+  else if (m.type === 'online') { $('online').textContent = m.n; }
+  else if (m.type === 'queued') { busy = false; queued = true; setStatus('Stake locked. Waiting for an opponent at this stake...'); $('leave').hidden = false; updatePlay(); }
+  else if (m.type === 'left') { queued = false; if (held) { demoBal += held; held = 0; saveDemo(); buildStakes(); } $('leave').hidden = true; setStatus('Stake refunded.'); loadBalance(); updatePlay(); }
+  else if (m.type === 'start') {
+    queued = false; busy = false; you = m.you; grid = m.grid; playing = true; state = null;
+    $('leave').hidden = true; $('result').hidden = true; $('meDot').style.background = skin[1]; $('timer').style.width = '0';
+    const pz = stake * 2 * (1 - cfg.rakeBps / 10000);
+    $('prizeChip').textContent = 'Prize ' + (m.demo ? '$' + pz.toFixed(2) : pz.toFixed(4) + ' SOL');
+    show(true);
+    let n = Math.ceil(m.countdown / 1000);
+    const tag = m.bot ? ' (practice bot)' : '';
+    $('gstatus').textContent = `Match found${tag}. Starting in ${n}...`;
+    const t = setInterval(() => { n--; if (n <= 0) { clearInterval(t); $('gstatus').textContent = 'Go!'; } else $('gstatus').textContent = `Starting in ${n}...`; }, 1000);
+  }
+  else if (m.type === 'state') { state = m; draw(); }
+  else if (m.type === 'end') {
+    playing = false;
+    const why = m.why === 'forfeit' ? ' Your opponent left the match.' : '';
+    const r = $('result'); r.hidden = false;
+    if (m.demo) { demoBal += m.payout; held = 0; saveDemo(); buildStakes(); }
+    const money = (v) => (m.demo ? '$' + v.toFixed(2) : v.toFixed(4) + ' SOL');
+    const title = m.result === 'win' ? 'You won' : m.result === 'lose' ? 'You lost' : 'Draw';
+    const body = m.result === 'win' ? (m.demo ? `${money(m.payout)} added to your demo cash.${why}` : `${money(m.payout)} is on its way to your wallet.${why}`) : m.result === 'lose' ? 'Better luck next round.' : `Your ${money(m.payout)} stake was returned.`;
+    r.innerHTML = `<h3>${title}</h3><p style="color:var(--mute);margin:0 0 14px">${body}</p><button class="btn-accent" id="again">Back to lobby</button>`;
+    $('again').onclick = () => { show(false); setStatus(''); loadBalance(); loadBoard(); updatePlay(); };
+  }
+  else if (m.type === 'error') { busy = false; queued = false; if (held && !playing) { demoBal += held; held = 0; saveDemo(); buildStakes(); } setStatus(m.msg); $('gstatus').textContent = m.msg; updatePlay(); }
+}
+
+function draw() {
+  const cell = cvs.width / grid;
+  const css = getComputedStyle(document.documentElement);
+  ctx.clearRect(0, 0, cvs.width, cvs.height);
+  ctx.fillStyle = css.getPropertyValue('--food');
+  state.food.forEach(([x, y]) => { ctx.beginPath(); ctx.arc((x + .5) * cell, (y + .5) * cell, cell * .32, 0, 7); ctx.fill(); });
+  state.s.forEach((body, i) => {
+    ctx.fillStyle = i === you ? skin[1] : css.getPropertyValue('--them');
+    body.forEach(([x, y], k) => { ctx.globalAlpha = k === 0 ? 1 : .82; ctx.fillRect(x * cell + 1, y * cell + 1, cell - 2, cell - 2); });
+    ctx.globalAlpha = 1;
+  });
+  $('meLen').textContent = state.s[you].length;
+  $('themLen').textContent = state.s[1 - you].length;
+  $('timer').style.width = (state.tick / state.max * 100) + '%';
+}
+
+// ---------- wallet + staking ----------
+async function connectWallet() {
+  provider = (window.phantom && window.phantom.solana) || window.solana;
+  if (!provider || !provider.isPhantom) return setStatus('Phantom not found. Install it from phantom.app.');
+  try {
+    const r = await provider.connect();
+    wallet = r.publicKey.toString();
+    $('connect').textContent = short(wallet);
+    setStatus('Wallet connected. Phantom must be set to devnet.');
+    loadBalance(); updatePlay();
+  } catch { setStatus('Connection cancelled.'); }
+}
+$('connect').onclick = connectWallet;
+
+$('play').onclick = async () => {
+  if (demo) {
+    if (demoBal < cfg.demoStakes[0]) { demoBal = 2; saveDemo(); buildStakes(); updatePlay(); return; }
+    busy = true; held = stake; demoBal -= stake; saveDemo(); buildStakes(); updatePlay();
+    setStatus('Looking for an opponent...');
+    ws.send(JSON.stringify({ type: 'join_demo', stake }));
+    return;
+  }
+  if (!wallet) return connectWallet();
+  busy = true; updatePlay();
+  try {
+    const { Connection, PublicKey, SystemProgram, Transaction } = solanaWeb3;
+    const pk = new PublicKey(wallet);
+    const conn = new Connection(cfg.rpc, 'confirmed');
+    const tx = new Transaction().add(SystemProgram.transfer({ fromPubkey: pk, toPubkey: new PublicKey(cfg.escrow), lamports: Math.round(stake * 1e9) }));
+    tx.feePayer = pk;
+    const bh = await conn.getLatestBlockhash();
+    tx.recentBlockhash = bh.blockhash;
+    setStatus('Approve the stake in Phantom...');
+    const { signature } = await provider.signAndSendTransaction(tx);
+    setStatus('Confirming your stake on-chain...');
+    await conn.confirmTransaction({ signature, ...bh }, 'confirmed');
+    ws.send(JSON.stringify({ type: 'join', wallet, stake, sig: signature }));
+    setStatus('Verifying your stake...');
+  } catch (e) { busy = false; setStatus('Stake failed: ' + (e.message || e)); updatePlay(); }
+};
+$('free').onchange = () => {
+  if (busy || queued) { $('free').checked = demo; return; }
+  demo = $('free').checked; stake = null; setStatus('');
+  buildStakes(); renderDetails(); updateChips(); updatePlay();
+};
+$('leave').onclick = () => ws.send(JSON.stringify({ type: 'leave' }));
+
+// ---------- controls ----------
+const keys = { ArrowUp:'up', w:'up', ArrowDown:'down', s:'down', ArrowLeft:'left', a:'left', ArrowRight:'right', d:'right' };
+const dir = (d) => { if (playing) ws.send(JSON.stringify({ type: 'dir', dir: d })); };
+addEventListener('keydown', (e) => { if (playing && keys[e.key]) { e.preventDefault(); dir(keys[e.key]); } });
+let t0;
+cvs.addEventListener('touchstart', (e) => { t0 = e.touches[0]; });
+cvs.addEventListener('touchend', (e) => {
+  if (!t0) return;
+  const dx = e.changedTouches[0].clientX - t0.clientX, dy = e.changedTouches[0].clientY - t0.clientY;
+  if (Math.max(Math.abs(dx), Math.abs(dy)) < 20) return;
+  dir(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up'));
+});
+
+buildSkins(); updateChips(); updatePlay(); connectWS(); loadBoard();
+</script>
+</body>
+</html>
